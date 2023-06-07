@@ -1,20 +1,24 @@
 import React, { useState, useEffect } from 'react';
+import Fuse from 'fuse.js';
 
 import { ArchiveBox } from './components/svgs/index';
 import './App.css';
 import { Stripe, Gmail, Alexa } from './dataset';
-import { Engine, Search } from './search-engine';
 
-// Here's the dataset that neeed to be used indexed for the search engine
 const dataset = [...Stripe, ...Gmail, ...Alexa].map((text) => ({ text }));
-const engine = Engine(dataset);
 
 function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
 
   useEffect(() => {
-    const results = Search(engine, searchQuery);
+    const fuse = new Fuse(dataset, {
+      keys: ['text'],
+      includeScore: true,
+      threshold: 0.6,
+    });
+
+    const results = searchQuery ? fuse.search(searchQuery) : [];
     setSearchResults(results);
   }, [searchQuery]);
 
@@ -46,22 +50,11 @@ function App() {
                 <span className="self-center mx-3">
                   <ArchiveBox />
                 </span>
-                {dataset[item[0]].text}
+                {item.item.text}
               </a>
             ))}
           </div>
-          <button
-            onClick={() =>
-              console.log(
-                Search(engine, 'email').map((item) => ({
-                  text: dataset[item[0]].text,
-                  similarity: item[1],
-                }))
-              )
-            }
-          >
-            Search
-          </button>
+          <button>Search</button>
         </div>
       </header>
     </div>
